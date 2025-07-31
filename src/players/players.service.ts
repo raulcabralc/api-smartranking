@@ -1,6 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { CreatePlayerDTO } from "./dto/create-player.dto";
 import { Player } from "./interfaces/player.interface";
+import { Error } from "src/utils/interfaces/error.interface";
+
 import * as uuid from "uuid";
 
 @Injectable()
@@ -10,13 +12,38 @@ export class PlayersService {
 
   constructor() {}
 
-  createUpdatePlayer(body: CreatePlayerDTO): void {
+  async createUpdatePlayer(body: CreatePlayerDTO): Promise<void> {
+    const { email } = body;
+
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    const player = await this.players.find((player) => player.email === email);
+
+    if (player) {
+      await this.update(player, body);
+    }
+
     this.logger.log("createsPlayerDTO:", body);
 
-    this.create(body);
+    await this.create(body);
   }
 
-  private create(body: CreatePlayerDTO): Player {
+  async indexPlayers(): Promise<Player[]> {
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    return await this.players;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async findOnePlayer(email: string): Promise<Error | Player> {
+    for (const player of this.players) {
+      if (player.email === email) return player;
+    }
+
+    return {
+      errors: ["player not found"],
+    };
+  }
+
+  private async create(body: CreatePlayerDTO): Promise<Player> {
     const { name, email, phoneNumber } = body;
 
     const player: Player = {
@@ -29,7 +56,17 @@ export class PlayersService {
       photoUrl: "url da foto",
     };
 
-    this.players.push(player);
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    await this.players.push(player);
+
+    return player;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  private async update(player: Player, body: CreatePlayerDTO): Promise<Player> {
+    const { name } = body;
+
+    player.name = name;
 
     return player;
   }
