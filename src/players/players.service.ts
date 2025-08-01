@@ -1,44 +1,57 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { CreatePlayerDTO } from "./dto/create-player.dto";
 import { Player } from "./interfaces/player.interface";
 import { Error } from "src/utils/interfaces/error.interface";
-
-import * as uuid from "uuid";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { Falsy } from "rxjs";
 
 @Injectable()
 export class PlayersService {
-  private players: Player[] = [];
-  private readonly logger = new Logger(PlayersService.name);
+  constructor(
+    @InjectModel("Player") private readonly playerModel: Model<Player>,
+  ) {}
 
-  constructor() {}
+  async createPlayer(body: CreatePlayerDTO): Promise<Player | Error> {
+    const playerExists = await this.exists(body.email);
 
-  async createUpdatePlayer(body: CreatePlayerDTO): Promise<Player> {
-    const { email } = body;
+    if (!playerExists) {
+      const playerCreated = await this.create(body);
 
+      return playerCreated;
+    }
+
+    return {
+      errors: ["player is already registered"],
+    };
+  }
+
+  async updatePlayer(
+    email: string,
+    body: CreatePlayerDTO,
+  ): Promise<Player | Falsy | Error> {
     const player = await this.exists(email);
 
     if (player) {
-      await this.update(player, body);
+      const updatedPlayer = await this.update(email, body);
 
-      return player;
+      return updatedPlayer;
     }
 
-    this.logger.log("createsPlayerDTO:", body);
-
-    const playerCreated = await this.create(body);
-
-    return playerCreated;
+    return {
+      errors: ["player not found"],
+    };
   }
 
   async indexPlayers(): Promise<Player[]> {
-    // eslint-disable-next-line @typescript-eslint/await-thenable
-    return await this.players;
+    return await this.playerModel.find().exec();
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
   async findOnePlayer(email: string): Promise<Error | Player> {
-    for (const player of this.players) {
-      if (player.email === email) return player;
+    const player = await this.exists(email);
+
+    if (player) {
+      return player;
     }
 
     return {
@@ -61,40 +74,26 @@ export class PlayersService {
   }
 
   private async create(body: CreatePlayerDTO): Promise<Player> {
-    const { name, email, phoneNumber } = body;
+    const player: Player = new this.playerModel(body);
 
-    const player: Player = {
-      _id: uuid.v1(),
-      name,
-      email,
-      phoneNumber,
-      ranking: "A",
-      rankingPosition: 1,
-      photoUrl: "url da foto",
-    };
-
-    // eslint-disable-next-line @typescript-eslint/await-thenable
-    await this.players.push(player);
-
-    return player;
+    return await player.save();
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  private async update(player: Player, body: CreatePlayerDTO): Promise<Player> {
-    const { name } = body;
-
-    player.name = name;
-
-    return player;
+  private async update(
+    email: string,
+    body: CreatePlayerDTO,
+  ): Promise<Player | Falsy> {
+    return await this.playerModel
+      .findOneAndUpdate({ email }, { $set: body }, { new: true })
+      .exec();
   }
 
   private async delete(player: Player): Promise<Error | Player> {
-    const index = this.players.indexOf(player);
+    const result = await this.playerModel
+      .deleteOne({ email: player.email })
+      .exec();
 
-    if (index > -1) {
-      // eslint-disable-next-line @typescript-eslint/await-thenable
-      await this.players.splice(index, 1);
-
+    if (result) {
       return player;
     }
 
@@ -103,8 +102,7 @@ export class PlayersService {
     };
   }
 
-  private async exists(email: string): Promise<Player | undefined> {
-    // eslint-disable-next-line @typescript-eslint/await-thenable
-    return await this.players.find((player) => player.email === email);
+  private async exists(email: string): Promise<Player | Falsy> {
+    return await this.playerModel.findOne({ email }).exec();
   }
 }

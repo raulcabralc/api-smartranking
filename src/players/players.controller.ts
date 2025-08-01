@@ -1,4 +1,14 @@
-import { Body, Controller, Post, Get, Param, Delete } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  Param,
+  Delete,
+  Patch,
+  UsePipes,
+  ValidationPipe,
+} from "@nestjs/common";
 import { PlayersService } from "./players.service";
 import { CreatePlayerDTO } from "./dto/create-player.dto";
 import { Player } from "./interfaces/player.interface";
@@ -19,8 +29,17 @@ export class PlayersController {
   }
 
   @Post()
-  async createUpdatePlayer(@Body() body: CreatePlayerDTO) {
-    return await this.playersService.createUpdatePlayer(body);
+  @UsePipes(ValidationPipe)
+  async createPlayer(@Body() body: CreatePlayerDTO) {
+    return await this.playersService.createPlayer(body);
+  }
+
+  @Patch("/:email")
+  async updatePlayer(
+    @Param("email") email: string,
+    @Body() body: CreatePlayerDTO,
+  ) {
+    return await this.playersService.updatePlayer(email, body);
   }
 
   @Delete("/:email")
