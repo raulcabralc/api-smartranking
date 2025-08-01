@@ -12,19 +12,22 @@ export class PlayersService {
 
   constructor() {}
 
-  async createUpdatePlayer(body: CreatePlayerDTO): Promise<void> {
+  async createUpdatePlayer(body: CreatePlayerDTO): Promise<Player> {
     const { email } = body;
 
-    // eslint-disable-next-line @typescript-eslint/await-thenable
-    const player = await this.players.find((player) => player.email === email);
+    const player = await this.exists(email);
 
     if (player) {
       await this.update(player, body);
+
+      return player;
     }
 
     this.logger.log("createsPlayerDTO:", body);
 
-    await this.create(body);
+    const playerCreated = await this.create(body);
+
+    return playerCreated;
   }
 
   async indexPlayers(): Promise<Player[]> {
@@ -36,6 +39,20 @@ export class PlayersService {
   async findOnePlayer(email: string): Promise<Error | Player> {
     for (const player of this.players) {
       if (player.email === email) return player;
+    }
+
+    return {
+      errors: ["player not found"],
+    };
+  }
+
+  async deletePlayer(email: string): Promise<Error | Player> {
+    const player = await this.exists(email);
+
+    if (player) {
+      await this.delete(player);
+
+      return player;
     }
 
     return {
@@ -69,5 +86,25 @@ export class PlayersService {
     player.name = name;
 
     return player;
+  }
+
+  private async delete(player: Player): Promise<Error | Player> {
+    const index = this.players.indexOf(player);
+
+    if (index > -1) {
+      // eslint-disable-next-line @typescript-eslint/await-thenable
+      await this.players.splice(index, 1);
+
+      return player;
+    }
+
+    return {
+      errors: ["player not found"],
+    };
+  }
+
+  private async exists(email: string): Promise<Player | undefined> {
+    // eslint-disable-next-line @typescript-eslint/await-thenable
+    return await this.players.find((player) => player.email === email);
   }
 }

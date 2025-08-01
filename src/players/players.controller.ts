@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, Param } from "@nestjs/common";
+import { Body, Controller, Post, Get, Param, Delete } from "@nestjs/common";
 import { PlayersService } from "./players.service";
 import { CreatePlayerDTO } from "./dto/create-player.dto";
 import { Player } from "./interfaces/player.interface";
@@ -13,7 +13,6 @@ export class PlayersController {
     return await this.playersService.indexPlayers();
   }
 
-  // @Get("/:id")
   @Get("/:email")
   async findOnePlayer(@Param("email") email: string): Promise<Error | Player> {
     return await this.playersService.findOnePlayer(email);
@@ -21,6 +20,11 @@ export class PlayersController {
 
   @Post()
   async createUpdatePlayer(@Body() body: CreatePlayerDTO) {
-    await this.playersService.createUpdatePlayer(body);
+    return await this.playersService.createUpdatePlayer(body);
+  }
+
+  @Delete("/:email")
+  async deletePlayer(@Param("email") email: string): Promise<Error | Player> {
+    return await this.playersService.deletePlayer(email);
   }
 }
