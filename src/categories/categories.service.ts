@@ -3,6 +3,7 @@ import { CreateCategoryDTO } from "./dto/create-category.dto";
 import { Category } from "./interfaces/category.interface";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { Error } from "src/utils/interfaces/error.interface";
 
 @Injectable()
 export class CategoriesService {
@@ -28,5 +29,17 @@ export class CategoriesService {
 
   async indexCategories() {
     return await this.categoryModel.find().exec();
+  }
+
+  async findOneById(id: string): Promise<Category | Error> {
+    const category = await this.categoryModel.findById(id).exec();
+
+    if (!category) {
+      return {
+        errors: ["category not found"],
+      };
+    }
+
+    return category;
   }
 }
