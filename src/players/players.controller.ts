@@ -8,6 +8,7 @@ import {
   Patch,
   UsePipes,
   ValidationPipe,
+  Param,
 } from "@nestjs/common";
 import { PlayersService } from "./players.service";
 import { CreatePlayerDTO } from "./dto/create-player.dto";
@@ -15,6 +16,7 @@ import { Player } from "./interfaces/player.interface";
 import { Error } from "src/utils/interfaces/error.interface";
 import { PlayerQueryValidationPipe } from "./pipes/players-query-validation.pipe";
 import type { FindOne } from "./interfaces/find-one.interface";
+import { PlayerParamValidationPipe } from "./pipes/players-param-validation.pipe";
 
 @Controller("/jogadores")
 export class PlayersController {
@@ -35,25 +37,24 @@ export class PlayersController {
     );
   }
 
+  @Get("/:id")
+  async findOneById(@Param("id", PlayerParamValidationPipe) id: string) {
+    return await this.playersService.findOneById(id);
+  }
+
   @Post()
   @UsePipes(ValidationPipe)
   async createPlayer(@Body() body: CreatePlayerDTO) {
     return await this.playersService.createPlayer(body);
   }
 
-  @Patch("/:email")
-  async updatePlayer(
-    @Query("email") email: string,
-    @Body() body: CreatePlayerDTO,
-  ) {
-    return await this.playersService.updatePlayer(email, body);
+  @Patch("/:id")
+  async updatePlayer(@Param("id") id: string, @Body() body: CreatePlayerDTO) {
+    return await this.playersService.updatePlayer(id, body);
   }
 
-  @Delete("/:email")
-  async deletePlayer(
-    @Query("email") email: string,
-    phoneNumber: string,
-  ): Promise<Error | Player> {
-    return await this.playersService.deletePlayer(email, phoneNumber);
+  @Delete("/:id")
+  async deletePlayer(@Param("id") id: string): Promise<Error | Player> {
+    return await this.playersService.deletePlayer(id);
   }
 }

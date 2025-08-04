@@ -27,13 +27,13 @@ export class PlayersService {
   }
 
   async updatePlayer(
-    email: string,
+    id: string,
     body: CreatePlayerDTO,
   ): Promise<Player | Falsy | Error> {
-    const player = await this.exists(email, body.phoneNumber);
+    const player = await this.findOneById(id);
 
     if (player) {
-      const updatedPlayer = await this.update(email, body);
+      const updatedPlayer = await this.update(id, body);
 
       return updatedPlayer;
     }
@@ -62,15 +62,22 @@ export class PlayersService {
     };
   }
 
-  async deletePlayer(
-    email: string,
-    phoneNumber: string,
-  ): Promise<Error | Player> {
-    const player = await this.exists(email, phoneNumber);
+  async findOneById(id: string): Promise<Error | Player> {
+    const player = await this.playerModel.findById(id).exec();
 
     if (player) {
-      await this.delete(player);
+      return player as Player;
+    }
 
+    return {
+      errors: ["player not found"],
+    };
+  }
+
+  async deletePlayer(id: string): Promise<Error | Player> {
+    const player = await this.playerModel.findByIdAndDelete(id);
+
+    if (player) {
       return player;
     }
 
@@ -86,26 +93,12 @@ export class PlayersService {
   }
 
   private async update(
-    email: string,
+    id: string,
     body: CreatePlayerDTO,
   ): Promise<Player | Falsy> {
     return await this.playerModel
-      .findOneAndUpdate({ email }, { $set: body }, { new: true })
+      .findOneAndUpdate({ id }, { $set: body }, { new: true })
       .exec();
-  }
-
-  private async delete(player: Player): Promise<Error | Player> {
-    const result = await this.playerModel
-      .deleteOne({ email: player.email })
-      .exec();
-
-    if (result) {
-      return player;
-    }
-
-    return {
-      errors: ["player not found"],
-    };
   }
 
   private async exists(
@@ -117,6 +110,6 @@ export class PlayersService {
       .findOne({ phoneNumber: phoneNumber })
       .exec();
 
-    return playerExists && existsPhone;
+    return playerExists || existsPhone;
   }
 }
