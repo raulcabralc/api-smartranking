@@ -117,6 +117,6 @@ export class PlayersService {
       .findOne({ phoneNumber: phoneNumber })
       .exec();
 
-    return playerExists || existsPhone;
+    return playerExists && existsPhone;
   }
 }

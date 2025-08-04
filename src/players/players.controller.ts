@@ -14,6 +14,7 @@ import { CreatePlayerDTO } from "./dto/create-player.dto";
 import { Player } from "./interfaces/player.interface";
 import { Error } from "src/utils/interfaces/error.interface";
 import { PlayerQueryValidationPipe } from "./pipes/players-query-validation.pipe";
+import type { FindOne } from "./interfaces/find-one.interface";
 
 @Controller("/jogadores")
 export class PlayersController {
@@ -26,10 +27,12 @@ export class PlayersController {
 
   @Get("/one")
   async findOnePlayer(
-    @Query("email", PlayerQueryValidationPipe) email: string,
-    phoneNumber: string,
+    @Query(PlayerQueryValidationPipe) query: FindOne,
   ): Promise<Error | Player> {
-    return await this.playersService.findOnePlayer(email, phoneNumber);
+    return await this.playersService.findOnePlayer(
+      query.email,
+      query.phoneNumber,
+    );
   }
 
   @Post()
