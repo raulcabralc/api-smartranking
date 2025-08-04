@@ -3,7 +3,7 @@ import {
   Controller,
   Post,
   Get,
-  Param,
+  Query,
   Delete,
   Patch,
   UsePipes,
@@ -13,6 +13,7 @@ import { PlayersService } from "./players.service";
 import { CreatePlayerDTO } from "./dto/create-player.dto";
 import { Player } from "./interfaces/player.interface";
 import { Error } from "src/utils/interfaces/error.interface";
+import { PlayerQueryValidationPipe } from "./pipes/players-query-validation.pipe";
 
 @Controller("/jogadores")
 export class PlayersController {
@@ -23,9 +24,12 @@ export class PlayersController {
     return await this.playersService.indexPlayers();
   }
 
-  @Get("/:email")
-  async findOnePlayer(@Param("email") email: string): Promise<Error | Player> {
-    return await this.playersService.findOnePlayer(email);
+  @Get("/one")
+  async findOnePlayer(
+    @Query("email", PlayerQueryValidationPipe) email: string,
+    phoneNumber: string,
+  ): Promise<Error | Player> {
+    return await this.playersService.findOnePlayer(email, phoneNumber);
   }
 
   @Post()
@@ -36,14 +40,17 @@ export class PlayersController {
 
   @Patch("/:email")
   async updatePlayer(
-    @Param("email") email: string,
+    @Query("email") email: string,
     @Body() body: CreatePlayerDTO,
   ) {
     return await this.playersService.updatePlayer(email, body);
   }
 
   @Delete("/:email")
-  async deletePlayer(@Param("email") email: string): Promise<Error | Player> {
-    return await this.playersService.deletePlayer(email);
+  async deletePlayer(
+    @Query("email") email: string,
+    phoneNumber: string,
+  ): Promise<Error | Player> {
+    return await this.playersService.deletePlayer(email, phoneNumber);
   }
 }

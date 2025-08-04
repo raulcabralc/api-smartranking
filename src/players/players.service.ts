@@ -13,7 +13,7 @@ export class PlayersService {
   ) {}
 
   async createPlayer(body: CreatePlayerDTO): Promise<Player | Error> {
-    const playerExists = await this.exists(body.email);
+    const playerExists = await this.exists(body.email, body.phoneNumber);
 
     if (!playerExists) {
       const playerCreated = await this.create(body);
@@ -22,7 +22,7 @@ export class PlayersService {
     }
 
     return {
-      errors: ["player is already registered"],
+      errors: ["phone number or email is already registered"],
     };
   }
 
@@ -30,7 +30,7 @@ export class PlayersService {
     email: string,
     body: CreatePlayerDTO,
   ): Promise<Player | Falsy | Error> {
-    const player = await this.exists(email);
+    const player = await this.exists(email, body.phoneNumber);
 
     if (player) {
       const updatedPlayer = await this.update(email, body);
@@ -47,8 +47,11 @@ export class PlayersService {
     return await this.playerModel.find().exec();
   }
 
-  async findOnePlayer(email: string): Promise<Error | Player> {
-    const player = await this.exists(email);
+  async findOnePlayer(
+    email: string,
+    phoneNumber: string,
+  ): Promise<Error | Player> {
+    const player = await this.exists(email, phoneNumber);
 
     if (player) {
       return player;
@@ -59,8 +62,11 @@ export class PlayersService {
     };
   }
 
-  async deletePlayer(email: string): Promise<Error | Player> {
-    const player = await this.exists(email);
+  async deletePlayer(
+    email: string,
+    phoneNumber: string,
+  ): Promise<Error | Player> {
+    const player = await this.exists(email, phoneNumber);
 
     if (player) {
       await this.delete(player);
@@ -102,7 +108,15 @@ export class PlayersService {
     };
   }
 
-  private async exists(email: string): Promise<Player | Falsy> {
-    return await this.playerModel.findOne({ email }).exec();
+  private async exists(
+    email: string,
+    phoneNumber: string,
+  ): Promise<Player | Falsy> {
+    const playerExists = await this.playerModel.findOne({ email }).exec();
+    const existsPhone = await this.playerModel
+      .findOne({ phoneNumber: phoneNumber })
+      .exec();
+
+    return playerExists || existsPhone;
   }
 }
